@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mission Pronoms Plus - Construction de phrases FLE</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <style>
+        .character-card {
+            transition: all 0.3s ease;
+        }
+        .character-card:hover {
+            transform: scale(1.05);
+        }
+        .draggable {
+            cursor: grab;
+            transition: all 0.2s ease;
+        }
+        .draggable:active {
+            cursor: grabbing;
+            transform: scale(1.1);
+        }
+        .drop-zone {
+            min-height: 50px;
+            transition: all 0.3s ease;
+        }
+        .drop-zone.drag-over {
+            background-color: #e0f2fe;
+            border-color: #0288d1;
+        }
+        .pronoun-me { background: linear-gradient(135deg, #ff6b6b, #ff8787); }
+        .pronoun-te { background: linear-gradient(135deg, #4ecdc4, #6bcf7f); }
+        .pronoun-lui { background: linear-gradient(135deg, #45b7d1, #6bb8ff); }
+        .pronoun-nous { background: linear-gradient(135deg, #96ceb4, #a8e6cf); }
+        .pronoun-vous { background: linear-gradient(135deg, #feca57, #ff9ff3); }
+        .pronoun-leur { background: linear-gradient(135deg, #c44569, #f8b500); }
+        .success-animation {
+            animation: bounce 0.6s ease-in-out;
+        }
+        @keyframes bounce {
+            0%, 20%, 60%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            80% { transform: translateY(-5px); }
+        }
+        .level-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .level-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        .level-card.locked {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .character {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin: 0 auto 10px;
+        }
+        .marie { background: linear-gradient(135deg, #ff9a9e, #fecfef); }
+        .paul { background: linear-gradient(135deg, #a8edea, #fed6e3); }
+        .sophie { background: linear-gradient(135deg, #fbc2eb, #a6c1ee); }
+        .lucas { background: linear-gradient(135deg, #84fab0, #8fd3f4); }
+
+        /* Animation de félicitation finale */
+        .final-celebration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57);
+            background-size: 400% 400%;
+            animation: gradientShift 3s ease infinite;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .celebration-title {
+            font-size: 4rem;
+            font-weight: bold;
+            animation: celebrationBounce 2s ease-in-out infinite;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+            margin-bottom: 2rem;
+        }
+
+        @keyframes celebrationBounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0) scale(1); }
+            40% { transform: translateY(-30px) scale(1.1); }
+            60% { transform: translateY(-15px) scale(1.05); }
+        }
+
+        .dancing-characters {
+            display: flex;
+            gap: 3rem;
+            margin: 2rem 0;
+        }
+
+        .dancing-character {
+            font-size: 5rem;
+            animation: dance 1.5s ease-in-out infinite;
+        }
+
+        .dancing-character:nth-child(1) { animation-delay: 0s; }
+        .dancing-character:nth-child(2) { animation-delay: 0.3s; }
+        .dancing-character:nth-child(3) { animation-delay: 0.6s; }
+        .dancing-character:nth-child(4) { animation-delay: 0.9s; }
+
+        @keyframes dance {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(-15deg) scale(1.2); }
+            50% { transform: rotate(15deg) scale(0.9); }
+            75% { transform: rotate(-10deg) scale(1.1); }
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #ffd700;
+            animation: confettiFall 3s linear infinite;
+        }
+
+        .confetti:nth-child(odd) { background: #ff6b6b; }
+        .confetti:nth-child(even) { background: #4ecdc4; }
+
+        @keyframes confettiFall {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        .celebration-message {
+            font-size: 1.5rem;
+            text-align: center;
+            max-width: 600px;
+            line-height: 1.6;
+            animation: fadeInUp 2s ease-out;
+            margin: 2rem 0;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .celebration-button {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            border: none;
+            color: white;
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            animation: pulse 2s ease-in-out infinite;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease;
+        }
+
+        .celebration-button:hover {
+            transform: scale(1.1);
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 8px 16px rgba(0,0,0,0.3); }
+            50% { box-shadow: 0 12px 24px rgba(0,0,0,0.4); }
+            100% { box-shadow: 0 8px 16px rgba(0,0,0,0.3); }
+        }
+
+        .trophy-animation {
+            font-size: 6rem;
+            color: #ffd700;
+            animation: trophySpin 3s ease-in-out infinite;
+            margin: 1rem 0;
+        }
+
+        @keyframes trophySpin {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(360deg) scale(1.2); }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header with Progress -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <div class="flex justify-between items-center mb-4">
+                <h1 class="text-3xl font-bold text-indigo-800 flex items-center">
+                    <i class="fas fa-star text-yellow-500 mr-3"></i>
+                    Mission Pronoms Plus
+                </h1>
+                <div class="flex items-center space-x-4">
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-indigo-600" id="score">0</div>
+                        <div class="text-sm text-gray-600">Points</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-green-600" id="level-display">1</div>
+                        <div class="text-sm text-gray-600">Niveau</div>
+                    </div>
+                </div>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-3">
+                <div class="bg-gradient-to-r from-green-400 to-blue-500 h-3 rounded-full transition-all duration-500" id="progress-bar" style="width: 0%"></div>
+            </div>
+            <div class="mt-2 text-sm text-gray-600" id="progress-text">Commencez votre aventure !</div>
+        </div>
+
+        <!-- Badges Collection -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                <i class="fas fa-trophy text-yellow-500 mr-2"></i>
+                Collection de badges
+            </h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="badges-container">
+                <div class="badge-slot bg-gray-100 rounded-lg p-4 text-center" data-badge="first-success">
+                    <i class="fas fa-medal text-4xl text-gray-400 mb-2"></i>
+                    <div class="text-sm text-gray-500">Premier succès</div>
+                </div>
+                <div class="badge-slot bg-gray-100 rounded-lg p-4 text-center" data-badge="level-master">
+                    <i class="fas fa-crown text-4xl text-gray-400 mb-2"></i>
+                    <div class="text-sm text-gray-500">Maître de niveau</div>
+                </div>
+                <div class="badge-slot bg-gray-100 rounded-lg p-4 text-center" data-badge="perfect-round">
+                    <i class="fas fa-gem text-4xl text-gray-400 mb-2"></i>
+                    <div class="text-sm text-gray-500">Série parfaite</div>
+                </div>
+                <div class="badge-slot bg-gray-100 rounded-lg p-4 text-center" data-badge="explorer">
+                    <i class="fas fa-compass text-4xl text-gray-400 mb-2"></i>
+                    <div class="text-sm text-gray-500">Explorateur</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Menu des niveaux -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" id="levels-menu">
+            <div class="level-card bg-white rounded-xl shadow-lg p-6" data-level="1">
+                <div class="text-center">
+                    <i class="fas fa-users text-4xl text-blue-500 mb-4"></i>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Niveau 1</h3>
+                    <p class="text-gray-600 mb-4">Qui parle à qui ?</p>
+                    <div class="text-sm text-blue-600 font-semibold">Association visuelle</div>
+                </div>
+            </div>
+            <div class="level-card bg-white rounded-xl shadow-lg p-6 locked" data-level="2">
+                <div class="text-center">
+                    <i class="fas fa-comments text-4xl text-green-500 mb-4"></i>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Niveau 2</h3>
+                    <p class="text-gray-600 mb-4">Complète la conversation</p>
+                    <div class="text-sm text-green-600 font-semibold">Phrases à trous</div>
+                </div>
+            </div>
+            <div class="level-card bg-white rounded-xl shadow-lg p-6 locked" data-level="3">
+                <div class="text-center">
+                    <i class="fas fa-book-open text-4xl text-purple-500 mb-4"></i>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Niveau 3</h3>
+                    <p class="text-gray-600 mb-4">Raconte l'histoire</p>
+                    <div class="text-sm text-purple-600 font-semibold">Récits narratifs</div>
+                </div>
+            </div>
+            <div class="level-card bg-white rounded-xl shadow-lg p-6 locked" data-level="4">
+                <div class="text-center">
+                    <i class="fas fa-puzzle-piece text-4xl text-red-500 mb-4"></i>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Niveau 4</h3>
+                    <p class="text-gray-600 mb-4">Construis ta phrase</p>
+                    <div class="text-sm text-red-600 font-semibold">Glisser-déposer</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Zone de jeu -->
+        <div class="bg-white rounded-xl shadow-lg p-6" id="game-area" style="display: none;">
+            <div class="flex justify-between items-center mb-6">
+                <button class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors" id="back-button">
+                    <i class="fas fa-arrow-left mr-2"></i>Retour
+                </button>
+                <div class="text-center">
+                    <h2 class="text-2xl font-bold text-gray-800" id="game-title"></h2>
+                    <div class="text-sm text-gray-600" id="game-progress"></div>
+                </div>
+                <button class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors" id="hint-button">
+                    <i class="fas fa-lightbulb mr-2"></i>Indice
+                </button>
+            </div>
+            
+            <div id="game-content">
+                <!-- Le contenu du jeu sera inséré ici -->
+            </div>
+            
+            <div class="mt-6 text-center">
+                <button class="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-colors font-semibold" id="validate-button" style="display: none;">
+                    <i class="fas fa-check mr-2"></i>Valider
+                </button>
+                <button class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors font-semibold" id="next-button" style="display: none;">
+                    <i class="fas fa-arrow-right mr-2"></i>Suivant
+                </button>
+            </div>
+        </div>
+
+        <!-- Zone de feedback -->
+        <div class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl p-8 max-w-md w-full mx-4 z-50" id="feedback-modal" style="display: none;">
+            <div class="text-center">
+                <div class="mb-4" id="feedback-icon"></div>
+                <h3 class="text-2xl font-bold mb-4" id="feedback-title"></h3>
+                <p class="text-gray-600 mb-6" id="feedback-text"></p>
+                <button class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors font-semibold" id="feedback-close">
+                    Continuer
+                </button>
+            </div>
+        </div>
+        <div class="fixed inset-0 bg-black bg-opacity-50 z-40" id="feedback-overlay" style="display: none;"></div>
+
+        <!-- Animation de félicitation finale -->
+        <div id="final-celebration" class="final-celebration" style="display: none;">
+            <div class="celebration-title">🎉 MISSION ACCOMPLIE ! 🎉</div>
+            
+            <div class="trophy-animation">
+                <i class="fas fa-trophy"></i>
+            </div>
+            
+            <div class="dancing-characters">
+                <div class="dancing-character">👩‍🦰</div>
+                <div class="dancing-character">👨‍💼</div>
+                <div class="dancing-character">👩‍🎓</div>
+                <div class="dancing-character">👨‍🎨</div>
+            </div>
+            
+            <div class="celebration-message">
+                <p><strong>Bravo, champion des pronoms !</strong></p>
+                <p>Vous venez de terminer toute la mission ! 🚀</p>
+                <p>Marie, Paul, Sophie et Lucas sont impressionnés par vos progrès !</p>
+                <p>Vous maîtrisez maintenant l'art des pronoms compléments comme un vrai Français !</p>
+            </div>
+            
+            <button id="celebration-close" class="celebration-button">
+                Recommencer l'aventure ! 🎯
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // État du jeu
+        let gameState = {
+            currentLevel: 1,
+            currentExercise: 0,
+            score: 0,
+            totalExercises: 0,
+            correctAnswers: 0,
+            badges: new Set(),
+            unlockedLevels: new Set([1])
+        };
+
+        // Données des exercices
+        const exerciseData = {
+            1: { // Niveau 1: Qui parle à qui ?
+                title: "Qui parle à qui ?",
+                exercises: [
+                    {
+                        type: "association",
+                        context: "Marie raconte ce qui s'est passé avec Paul",
+                        characters: [
+                            {name: "Marie", emoji: "👩‍🦰", color: "marie"},
+                            {name: "Paul", emoji: "👨‍💼", color: "paul"}
+                        ],
+                        sentence: "Paul ___ a téléphoné hier soir",
+                        correct: "m'",
+                        explanation: "Marie raconte que Paul lui a téléphoné. On utilise 'm'' devant une voyelle."
+                    },
+                    {
+                        type: "association",
+                        context: "Sophie parle de sa conversation avec Lucas",
+                        characters: [
+                            {name: "Sophie", emoji: "👩‍🎓", color: "sophie"},
+                            {name: "Lucas", emoji: "👨‍🎨", color: "lucas"}
+                        ],
+                        sentence: "Lucas ___ a donné son livre",
+                        correct: "m'",
+                        explanation: "Sophie raconte que Lucas lui a donné son livre. 'm'' car c'est Sophie qui parle."
+                    },
+                    {
+                        type: "association",
+                        context: "Paul raconte ce qu'il a fait pour Marie",
+                        characters: [
+                            {name: "Paul", emoji: "👨‍💼", color: "paul"},
+                            {name: "Marie", emoji: "👩‍🦰", color: "marie"}
+                        ],
+                        sentence: "Je ___ ai apporté des fleurs",
+                        correct: "lui",
+                        explanation: "Paul raconte qu'il a apporté des fleurs à Marie. On utilise 'lui' pour une personne."
+                    }
+                ]
+            },
+            2: { // Niveau 2: Complète la conversation
+                title: "Complète la conversation",
+                exercises: [
+                    {
+                        type: "completion",
+                        context: "Conversation entre amis",
+                        dialogue: [
+                            {speaker: "Marie", text: "Salut Paul !"},
+                            {speaker: "Paul", text: "Salut ! Tu ___ as appelé hier ?", options: ["m'", "me"], correct: "m'"},
+                            {speaker: "Marie", text: "Oui, je voulais te dire quelque chose."}
+                        ],
+                        explanation: "On utilise 'm'' devant 'as' car cela commence par une voyelle."
+                    },
+                    {
+                        type: "completion",
+                        context: "Au bureau",
+                        dialogue: [
+                            {speaker: "Sophie", text: "Le directeur ___ a donné le dossier", options: ["nous", "nous a"], correct: "nous"},
+                            {speaker: "Lucas", text: "Parfait, nous pouvons commencer !"}
+                        ],
+                        explanation: "On utilise 'nous' car il parle à plusieurs personnes de son équipe."
+                    },
+                    {
+                        type: "completion",
+                        context: "En famille",
+                        dialogue: [
+                            {speaker: "Maman", text: "Les enfants, grand-mère ___ a écrit une lettre", options: ["vous", "te"], correct: "vous"},
+                            {speaker: "Les enfants", text: "Qu'est-ce qu'elle dit ?"}
+                        ],
+                        explanation: "Maman s'adresse à plusieurs enfants, donc on utilise 'vous'."
+                    }
+                ]
+            },
+            3: { // Niveau 3: Raconte l'histoire
+                title: "Raconte l'histoire",
+                exercises: [
+                    {
+                        type: "narrative",
+                        context: "Une belle histoire d'amitié",
+                        story: [
+                            {
+                                image: "🎂",
+                                text: "C'était l'anniversaire de Marie. Paul ___ a préparé une surprise.",
+                                options: ["lui", "leur", "nous"],
+                                correct: "lui",
+                                explanation: "Paul a préparé une surprise pour Marie (une personne)."
+                            },
+                            {
+                                image: "🎁",
+                                text: "Il ___ a offert un cadeau magnifique.",
+                                options: ["lui", "leur", "me"],
+                                correct: "lui",
+                                explanation: "Paul a offert le cadeau à Marie."
+                            },
+                            {
+                                image: "😊",
+                                text: "Marie était très heureuse. Elle ___ a dit merci avec un grand sourire.",
+                                options: ["lui", "leur", "te"],
+                                correct: "lui",
+                                explanation: "Marie a dit merci à Paul."
+                            }
+                        ]
+                    },
+                    {
+                        type: "narrative",
+                        context: "À l'école",
+                        story: [
+                            {
+                                image: "📚",
+                                text: "Le professeur ___ a expliqué la nouvelle leçon.",
+                                options: ["nous", "vous", "me"],
+                                correct: "nous",
+                                explanation: "Le professeur explique la leçon à tous les élèves."
+                            },
+                            {
+                                image: "✋",
+                                text: "Sophie a levé la main. Elle ___ a posé une question.",
+                                options: ["lui", "leur", "nous"],
+                                correct: "lui",
+                                explanation: "Sophie a posé une question au professeur."
+                            },
+                            {
+                                image: "💡",
+                                text: "Le professeur ___ a donné une réponse claire.",
+                                options: ["lui", "leur", "nous"],
+                                correct: "lui",
+                                explanation: "Le professeur a répondu à Sophie spécifiquement."
+                            }
+                        ]
+                    }
+                ]
+            },
+            4: { // Niveau 4: Construis ta phrase (ENRICHI)
+                title: "Construis ta phrase",
+                exercises: [
+                    {
+                        type: "construction",
+                        context: "Marie raconte sa journée",
+                        elements: ["Mon", "frère", "m'", "a", "invitée", "au", "restaurant"],
+                        correct: ["Mon", "frère", "m'", "a", "invitée", "au", "restaurant"],
+                        character: {name: "Marie", emoji: "👩‍🦰"},
+                        explanation: "Marie raconte que son frère l'a invitée. On utilise 'm'' car Marie parle d'elle-même."
+                    },
+                    {
+                        type: "construction",
+                        context: "Paul explique à son ami",
+                        elements: ["Je", "lui", "ai", "donné", "mon", "numéro", "de", "téléphone"],
+                        correct: ["Je", "lui", "ai", "donné", "mon", "numéro", "de", "téléphone"],
+                        character: {name: "Paul", emoji: "👨‍💼"},
+                        explanation: "Paul a donné son numéro à quelqu'un. On utilise 'lui' pour cette personne."
+                    },
+                    {
+                        type: "construction",
+                        context: "Sophie raconte ses vacances",
+                        elements: ["Mes", "parents", "nous", "ont", "emmenés", "à", "la", "plage"],
+                        correct: ["Mes", "parents", "nous", "ont", "emmenés", "à", "la", "plage"],
+                        character: {name: "Sophie", emoji: "👩‍🎓"},
+                        explanation: "Sophie parle d'elle et d'autres personnes ('nous'). Ses parents les ont emmenés tous."
+                    },
+                    {
+                        type: "construction",
+                        context: "Lucas raconte son week-end",
+                        elements: ["Ma", "sœur", "m'", "a", "aidé", "avec", "mes", "devoirs"],
+                        correct: ["Ma", "sœur", "m'", "a", "aidé", "avec", "mes", "devoirs"],
+                        character: {name: "Lucas", emoji: "👨‍🎨"},
+                        explanation: "Lucas raconte que sa sœur l'a aidé. On utilise 'm'' car Lucas parle de lui-même."
+                    },
+                    {
+                        type: "construction",
+                        context: "Marie parle de son patron",
+                        elements: ["Mon", "chef", "nous", "a", "félicités", "pour", "notre", "travail"],
+                        correct: ["Mon", "chef", "nous", "a", "félicités", "pour", "notre", "travail"],
+                        character: {name: "Marie", emoji: "👩‍🦰"},
+                        explanation: "Marie parle d'elle et de ses collègues ('nous'). Le chef les a tous félicités."
+                    },
+                    {
+                        type: "construction",
+                        context: "Paul raconte sa visite chez le médecin",
+                        elements: ["Le", "docteur", "m'", "a", "prescrit", "des", "médicaments"],
+                        correct: ["Le", "docteur", "m'", "a", "prescrit", "des", "médicaments"],
+                        character: {name: "Paul", emoji: "👨‍💼"},
+                        explanation: "Paul raconte sa visite. Le docteur lui a prescrit des médicaments."
+                    },
+                    {
+                        type: "construction",
+                        context: "Sophie parle de ses amis",
+                        elements: ["Mes", "amis", "m'", "ont", "organisé", "une", "fête", "surprise"],
+                        correct: ["Mes", "amis", "m'", "ont", "organisé", "une", "fête", "surprise"],
+                        character: {name: "Sophie", emoji: "👩‍🎓"},
+                        explanation: "Sophie raconte que ses amis lui ont organisé une fête. Elle utilise 'm'' car elle parle d'elle-même."
+                    },
+                    {
+                        type: "construction",
+                        context: "Lucas explique ce qu'il a fait pour sa mère",
+                        elements: ["Je", "lui", "ai", "préparé", "son", "petit", "déjeuner", "préféré"],
+                        correct: ["Je", "lui", "ai", "préparé", "son", "petit", "déjeuner", "préféré"],
+                        character: {name: "Lucas", emoji: "👨‍🎨"},
+                        explanation: "Lucas a préparé le petit déjeuner pour sa mère. On utilise 'lui' pour sa mère."
+                    },
+                    {
+                        type: "construction",
+                        context: "Marie raconte sa sortie avec ses enfants",
+                        elements: ["J'", "ai", "emmené", "mes", "enfants", "au", "cinéma", "hier"],
+                        correct: ["J'", "ai", "emmené", "mes", "enfants", "au", "cinéma", "hier"],
+                        character: {name: "Marie", emoji: "👩‍🦰"},
+                        explanation: "Marie a emmené ses enfants au cinéma. Ici, pas de pronom complément nécessaire."
+                    },
+                    {
+                        type: "construction",
+                        context: "Paul parle de son professeur",
+                        elements: ["Notre", "professeur", "nous", "a", "donné", "beaucoup", "d'", "exercices"],
+                        correct: ["Notre", "professeur", "nous", "a", "donné", "beaucoup", "d'", "exercices"],
+                        character: {name: "Paul", emoji: "👨‍💼"},
+                        explanation: "Paul parle de lui et de ses camarades ('nous'). Le professeur leur a donné des exercices."
+                    },
+                    {
+                        type: "construction",
+                        context: "Sophie raconte sa conversation avec sa grand-mère",
+                        elements: ["Grand-mère", "m'", "a", "raconté", "des", "histoires", "de", "son", "enfance"],
+                        correct: ["Grand-mère", "m'", "a", "raconté", "des", "histoires", "de", "son", "enfance"],
+                        character: {name: "Sophie", emoji: "👩‍🎓"},
+                        explanation: "Sophie raconte que sa grand-mère lui a raconté des histoires."
+                    },
+                    {
+                        type: "construction",
+                        context: "Lucas explique ce qu'il a fait pour ses voisins",
+                        elements: ["Je", "leur", "ai", "apporté", "leur", "courrier", "pendant", "leurs", "vacances"],
+                        correct: ["Je", "leur", "ai", "apporté", "leur", "courrier", "pendant", "leurs", "vacances"],
+                        character: {name: "Lucas", emoji: "👨‍🎨"},
+                        explanation: "Lucas a apporté le courrier à ses voisins (plusieurs personnes). On utilise 'leur'."
+                    },
+                    {
+                        type: "construction",
+                        context: "Marie parle de son rendez-vous chez le coiffeur",
+                        elements: ["Ma", "coiffeuse", "m'", "a", "fait", "une", "très", "belle", "coupe"],
+                        correct: ["Ma", "coiffeuse", "m'", "a", "fait", "une", "très", "belle", "coupe"],
+                        character: {name: "Marie", emoji: "👩‍🦰"},
+                        explanation: "Marie raconte que sa coiffeuse lui a fait une belle coupe."
+                    },
+                    {
+                        type: "construction",
+                        context: "Paul raconte ce qu'il a fait pour son équipe",
+                        elements: ["J'", "ai", "préparé", "un", "gâteau", "pour", "mes", "collègues"],
+                        correct: ["J'", "ai", "préparé", "un", "gâteau", "pour", "mes", "collègues"],
+                        character: {name: "Paul", emoji: "👨‍💼"},
+                        explanation: "Paul a préparé un gâteau pour ses collègues. Ici on utilise 'pour' au lieu d'un pronom."
+                    },
+                    {
+                        type: "construction",
+                        context: "Sophie explique sa discussion avec ses parents",
+                        elements: ["Mes", "parents", "m'", "ont", "donné", "la", "permission", "de", "sortir"],
+                        correct: ["Mes", "parents", "m'", "ont", "donné", "la", "permission", "de", "sortir"],
+                        character: {name: "Sophie", emoji: "👩‍🎓"},
+                        explanation: "Sophie raconte que ses parents lui ont donné la permission."
+                    }
+                ]
+            }
+        };
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDisplay();
+            bindEvents();
+            createConfetti();
+        });
+
+        function createConfetti() {
+            const celebrationDiv = document.getElementById('final-celebration');
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.animationDelay = Math.random() * 3 + 's';
+                confetti.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                celebrationDiv.appendChild(confetti);
+            }
+        }
+
+        function bindEvents() {
+            // Menu des niveaux
+            document.querySelectorAll('.level-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    const level = parseInt(this.dataset.level);
+                    if (gameState.unlockedLevels.has(level) && !this.classList.contains('locked')) {
+                        startLevel(level);
+                    }
+                });
+            });
+
+            // Boutons de navigation
+            document.getElementById('back-button').addEventListener('click', backToMenu);
+            document.getElementById('validate-button').addEventListener('click', validateAnswer);
+            document.getElementById('next-button').addEventListener('click', nextExercise);
+            document.getElementById('hint-button').addEventListener('click', showHint);
+            document.getElementById('feedback-close').addEventListener('click', closeFeedback);
+            document.getElementById('feedback-overlay').addEventListener('click', closeFeedback);
+            
+            // Bouton de fermeture de la célébration finale
+            document.getElementById('celebration-close').addEventListener('click', function() {
+                document.getElementById('final-celebration').style.display = 'none';
+                // Réinitialiser le jeu pour recommencer
+                gameState = {
+                    currentLevel: 1,
+                    currentExercise: 0,
+                    score: 0,
+                    totalExercises: 0,
+                    correctAnswers: 0,
+                    badges: new Set(),
+                    unlockedLevels: new Set([1])
+                };
+                updateDisplay();
+                // Verrouiller tous les niveaux sauf le premier
+                document.querySelectorAll('.level-card').forEach(card => {
+                    const level = parseInt(card.dataset.level);
+                    if (level > 1) {
+                        card.classList.add('locked');
+                    }
+                });
+                // Réinitialiser les badges
+                document.querySelectorAll('.badge-slot').forEach(badge => {
+                    badge.classList.remove('bg-gradient-to-br', 'from-yellow-400', 'to-orange-500');
+                    badge.classList.add('bg-gray-100');
+                    badge.querySelector('i').classList.remove('text-white');
+                    badge.querySelector('i').classList.add('text-gray-400');
+                    badge.querySelector('div').classList.remove('text-white', 'font-semibold');
+                    badge.querySelector('div').classList.add('text-gray-500');
+                });
+            });
+        }
+
+        function updateDisplay() {
+            document.getElementById('score').textContent = gameState.score;
+            document.getElementById('level-display').textContent = gameState.currentLevel;
+            
+            const progress = (gameState.currentExercise / Math.max(gameState.totalExercises, 1)) * 100;
+            document.getElementById('progress-bar').style.width = progress + '%';
+            
+            if (gameState.totalExercises > 0) {
+                document.getElementById('progress-text').textContent = 
+                    `Exercice ${gameState.currentExercise + 1} sur ${gameState.totalExercises}`;
+            }
+
+            // Mise à jour des niveaux débloqués
+            document.querySelectorAll('.level-card').forEach(card => {
+                const level = parseInt(card.dataset.level);
+                if (gameState.unlockedLevels.has(level)) {
+                    card.classList.remove('locked');
+                }
+            });
+        }
+
+        function startLevel(level) {
+            gameState.currentLevel = level;
+            gameState.currentExercise = 0;
+            gameState.totalExercises = exerciseData[level].exercises.length;
+            
+            document.getElementById('levels-menu').style.display = 'none';
+            document.getElementById('game-area').style.display = 'block';
+            document.getElementById('game-title').textContent = exerciseData[level].title;
+            
+            loadExercise();
+            updateDisplay();
+        }
+
+        function loadExercise() {
+            const exercise = exerciseData[gameState.currentLevel].exercises[gameState.currentExercise];
+            const gameContent = document.getElementById('game-content');
+            gameContent.innerHTML = '';
+
+            switch (exercise.type) {
+                case 'association':
+                    loadAssociationExercise(exercise, gameContent);
+                    break;
+                case 'completion':
+                    loadCompletionExercise(exercise, gameContent);
+                    break;
+                case 'construction':
+                    loadConstructionExercise(exercise, gameContent);
+                    break;
+                case 'narrative':
+                    loadNarrativeExercise(exercise, gameContent);
+                    break;
+            }
+
+            document.getElementById('validate-button').style.display = 'inline-block';
+            document.getElementById('next-button').style.display = 'none';
+        }
+
+        function loadAssociationExercise(exercise, container) {
+            container.innerHTML = `
+                <div class="text-center mb-8">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">${exercise.context}</h3>
+                    <div class="flex justify-center space-x-8 mb-6">
+                        ${exercise.characters.map(char => `
+                            <div class="character-card text-center">
+                                <div class="character ${char.color}">${char.emoji}</div>
+                                <div class="font-semibold text-gray-700">${char.name}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="bg-blue-50 rounded-lg p-6">
+                        <div class="text-lg mb-4">${exercise.sentence.replace('___', 
+                            `<span class="inline-block min-w-20 mx-2 px-3 py-1 bg-white border-2 border-dashed border-blue-300 rounded drop-zone" id="answer-slot"></span>`
+                        )}</div>
+                        <div class="flex justify-center space-x-4 mt-6">
+                            <button class="pronoun-option bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors" data-value="me">me</button>
+                            <button class="pronoun-option bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors" data-value="m'">m'</button>
+                            <button class="pronoun-option bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors" data-value="lui">lui</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Bind pronoun selection
+            container.querySelectorAll('.pronoun-option').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    container.querySelectorAll('.pronoun-option').forEach(b => b.classList.remove('bg-green-500'));
+                    this.classList.add('bg-green-500');
+                    document.getElementById('answer-slot').textContent = this.dataset.value;
+                    container.dataset.selectedAnswer = this.dataset.value;
+                });
+            });
+        }
+
+        function loadCompletionExercise(exercise, container) {
+            container.innerHTML = `
+                <div class="bg-gradient-to-br from-green-50 to-blue-50 rounded-lg p-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-6 text-center">${exercise.context}</h3>
+                    <div class="space-y-4">
+                        ${exercise.dialogue.map((line, index) => `
+                            <div class="flex ${line.speaker === 'Marie' || line.speaker === 'Sophie' || line.speaker === 'Maman' ? 'justify-start' : 'justify-end'}">
+                                <div class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                                    line.speaker === 'Marie' || line.speaker === 'Sophie' || line.speaker === 'Maman' 
+                                    ? 'bg-blue-500 text-white' 
+                                    : 'bg-gray-200 text-gray-800'
+                                }">
+                                    <div class="font-semibold text-sm mb-1">${line.speaker}</div>
+                                    <div>${line.options ? 
+                                        line.text.replace('___', `<select class="completion-select bg-white text-gray-800 px-2 py-1 rounded mx-2" data-correct="${line.correct}">
+                                            <option value="">...</option>
+                                            ${line.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
+                                        </select>`) 
+                                        : line.text}
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+
+            // Store correct answers
+            const selects = container.querySelectorAll('.completion-select');
+            container.dataset.totalAnswers = selects.length;
+            let correctCount = 0;
+
+            selects.forEach(select => {
+                select.addEventListener('change', function() {
+                    if (this.value === this.dataset.correct) {
+                        this.classList.add('bg-green-100');
+                        correctCount++;
+                    } else {
+                        this.classList.remove('bg-green-100');
+                        if (this.value !== '') correctCount--;
+                    }
+                    container.dataset.correctAnswers = correctCount;
+                });
+            });
+        }
+
+        function loadConstructionExercise(exercise, container) {
+            // Mélanger les éléments
+            const shuffledElements = [...exercise.elements].sort(() => Math.random() - 0.5);
+            
+            container.innerHTML = `
+                <div class="text-center mb-8">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">${exercise.context}</h3>
+                    <div class="character ${exercise.character.name.toLowerCase()}">${exercise.character.emoji}</div>
+                    <div class="font-semibold text-gray-700 mb-6">${exercise.character.name}</div>
+                </div>
+                
+                <div class="bg-yellow-50 rounded-lg p-6 mb-6">
+                    <h4 class="font-semibold text-gray-700 mb-4">Éléments à utiliser :</h4>
+                    <div class="flex flex-wrap justify-center gap-3" id="word-bank">
+                        ${shuffledElements.map((word, index) => `
+                            <div class="draggable bg-blue-500 text-white px-3 py-2 rounded-lg cursor-pointer hover:bg-blue-600 transition-colors" 
+                                 data-word="${word}" data-index="${index}">${word}</div>
+                        `).join('')}
+                    </div>
+                </div>
+                
+                <div class="bg-green-50 rounded-lg p-6">
+                    <h4 class="font-semibold text-gray-700 mb-4">Construisez la phrase :</h4>
+                    <div class="flex flex-wrap gap-2 min-h-16 p-4 bg-white rounded-lg border-2 border-dashed border-green-300" id="sentence-builder">
+                        <!-- Les mots seront déposés ici -->
+                    </div>
+                    <button class="mt-4 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors" id="clear-sentence">
+                        <i class="fas fa-trash mr-2"></i>Recommencer
+                    </button>
+                </div>
+            `;
+
+            // Drag and drop functionality
+            const wordBank = container.querySelector('#word-bank');
+            const sentenceBuilder = container.querySelector('#sentence-builder');
+            const clearButton = container.querySelector('#clear-sentence');
+
+            wordBank.addEventListener('click', function(e) {
+                if (e.target.classList.contains('draggable')) {
+                    moveWordToSentence(e.target);
+                }
+            });
+
+            sentenceBuilder.addEventListener('click', function(e) {
+                if (e.target.classList.contains('draggable')) {
+                    moveWordToBank(e.target);
+                }
+            });
+
+            clearButton.addEventListener('click', function() {
+                const wordsInSentence = sentenceBuilder.querySelectorAll('.draggable');
+                wordsInSentence.forEach(word => moveWordToBank(word));
+            });
+
+            function moveWordToSentence(wordElement) {
+                const newWord = wordElement.cloneNode(true);
+                newWord.classList.add('bg-green-500', 'hover:bg-green-600');
+                newWord.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+                sentenceBuilder.appendChild(newWord);
+                wordElement.remove();
+                updateSentenceAnswer();
+            }
+
+            function moveWordToBank(wordElement) {
+                const newWord = wordElement.cloneNode(true);
+                newWord.classList.add('bg-blue-500', 'hover:bg-blue-600');
+                newWord.classList.remove('bg-green-500', 'hover:bg-green-600');
+                wordBank.appendChild(newWord);
+                wordElement.remove();
+                updateSentenceAnswer();
+            }
+
+            function updateSentenceAnswer() {
+                const words = Array.from(sentenceBuilder.querySelectorAll('.draggable')).map(el => el.dataset.word);
+                container.dataset.selectedAnswer = words.join(' ');
+            }
+
+            // Store correct answer
+            container.dataset.correctAnswer = exercise.correct.join(' ');
+        }
+
+        function loadNarrativeExercise(exercise, container) {
+            let currentStep = 0;
+            
+            function showStep(stepIndex) {
+                const step = exercise.story[stepIndex];
+                container.innerHTML = `
+                    <div class="text-center mb-8">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-6">${exercise.context}</h3>
+                        <div class="text-6xl mb-6">${step.image}</div>
+                        <div class="bg-purple-50 rounded-lg p-6 max-w-2xl mx-auto">
+                            <div class="text-lg mb-6">${step.text.replace('___', 
+                                `<select class="narrative-select bg-white text-gray-800 px-4 py-2 rounded-lg mx-2 border-2 border-purple-300" data-correct="${step.correct}">
+                                    <option value="">Choisissez...</option>
+                                    ${step.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
+                                </select>`
+                            )}</div>
+                            <div class="text-sm text-gray-600">
+                                Étape ${stepIndex + 1} sur ${exercise.story.length}
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                const select = container.querySelector('.narrative-select');
+                select.addEventListener('change', function() {
+                    container.dataset.selectedAnswer = this.value;
+                    container.dataset.correctAnswer = step.correct;
+                    container.dataset.explanation = step.explanation;
+                });
+            }
+
+            container.dataset.currentStep = currentStep;
+            container.dataset.totalSteps = exercise.story.length;
+            showStep(currentStep);
+
+            // Function to go to next step
+            container.nextStep = function() {
+                currentStep++;
+                if (currentStep < exercise.story.length) {
+                    container.dataset.currentStep = currentStep;
+                    showStep(currentStep);
+                    return false; // Not finished yet
+                }
+                return true; // Exercise completed
+            };
+        }
+
+        function validateAnswer() {
+            const exercise = exerciseData[gameState.currentLevel].exercises[gameState.currentExercise];
+            const gameContent = document.getElementById('game-content');
+            let isCorrect = false;
+            let explanation = exercise.explanation || '';
+
+            switch (exercise.type) {
+                case 'association':
+                    isCorrect = gameContent.dataset.selectedAnswer === exercise.correct;
+                    break;
+                case 'completion':
+                    const totalAnswers = parseInt(gameContent.dataset.totalAnswers) || 1;
+                    const correctAnswers = parseInt(gameContent.dataset.correctAnswers) || 0;
+                    isCorrect = correctAnswers === totalAnswers;
+                    break;
+                case 'construction':
+                    isCorrect = gameContent.dataset.selectedAnswer === gameContent.dataset.correctAnswer;
+                    break;
+                case 'narrative':
+                    isCorrect = gameContent.dataset.selectedAnswer === gameContent.dataset.correctAnswer;
+                    explanation = gameContent.dataset.explanation || explanation;
+                    break;
+            }
+
+            if (isCorrect) {
+                gameState.score += 10;
+                gameState.correctAnswers++;
+                showFeedback(true, explanation);
+                
+                // Check for badges
+                if (gameState.correctAnswers === 1 && !gameState.badges.has('first-success')) {
+                    unlockBadge('first-success');
+                }
+            } else {
+                showFeedback(false, explanation);
+            }
+
+            updateDisplay();
+        }
+
+        function nextExercise() {
+            const exercise = exerciseData[gameState.currentLevel].exercises[gameState.currentExercise];
+            
+            if (exercise.type === 'narrative' && document.getElementById('game-content').nextStep) {
+                const finished = document.getElementById('game-content').nextStep();
+                if (!finished) {
+                    document.getElementById('validate-button').style.display = 'inline-block';
+                    document.getElementById('next-button').style.display = 'none';
+                    return;
+                }
+            }
+
+            gameState.currentExercise++;
+            
+            if (gameState.currentExercise >= gameState.totalExercises) {
+                completeLevel();
+            } else {
+                loadExercise();
+                updateDisplay();
+            }
+        }
+
+        function completeLevel() {
+            const nextLevel = gameState.currentLevel + 1;
+            if (nextLevel <= 4) {
+                gameState.unlockedLevels.add(nextLevel);
+                unlockBadge('level-master');
+                
+                // Vérifier si c'est le dernier niveau (niveau 4)
+                if (gameState.currentLevel === 4) {
+                    // Déclencher l'animation de félicitation finale
+                    setTimeout(() => {
+                        showFinalCelebration();
+                    }, 2000); // Attendre 2 secondes après le feedback
+                    
+                    showFeedback(true, `🎉 Incroyable ! Vous avez terminé TOUS les niveaux ! 🎉`, () => {
+                        // Le callback sera géré par showFinalCelebration
+                    });
+                } else {
+                    showFeedback(true, `Félicitations ! Vous avez terminé le niveau ${gameState.currentLevel} !`, () => {
+                        backToMenu();
+                    });
+                }
+            } else {
+                showFeedback(true, `Félicitations ! Vous avez terminé le niveau ${gameState.currentLevel} !`, () => {
+                    backToMenu();
+                });
+            }
+        }
+
+        function showFinalCelebration() {
+            document.getElementById('final-celebration').style.display = 'flex';
+        }
+
+        function showFeedback(success, message, callback = null) {
+            const modal = document.getElementById('feedback-modal');
+            const overlay = document.getElementById('feedback-overlay');
+            const icon = document.getElementById('feedback-icon');
+            const title = document.getElementById('feedback-title');
+            const text = document.getElementById('feedback-text');
+
+            if (success) {
+                icon.innerHTML = '<i class="fas fa-check-circle text-6xl text-green-500 success-animation"></i>';
+                title.textContent = 'Excellent !';
+                title.className = 'text-2xl font-bold mb-4 text-green-600';
+            } else {
+                icon.innerHTML = '<i class="fas fa-lightbulb text-6xl text-blue-500"></i>';
+                title.textContent = 'Continuez !';
+                title.className = 'text-2xl font-bold mb-4 text-blue-600';
+            }
+
+            text.textContent = message;
+            modal.style.display = 'block';
+            overlay.style.display = 'block';
+
+            // Store callback for close button
+            modal.dataset.callback = callback ? 'true' : 'false';
+            if (callback) {
+                document.getElementById('feedback-close').onclick = () => {
+                    closeFeedback();
+                    callback();
+                };
+            }
+
+            if (success) {
+                document.getElementById('validate-button').style.display = 'none';
+                document.getElementById('next-button').style.display = 'inline-block';
+            }
+        }
+
+        function closeFeedback() {
+            document.getElementById('feedback-modal').style.display = 'none';
+            document.getElementById('feedback-overlay').style.display = 'none';
+            
+            // Reset callback
+            document.getElementById('feedback-close').onclick = closeFeedback;
+        }
+
+        function unlockBadge(badgeType) {
+            if (gameState.badges.has(badgeType)) return;
+            
+            gameState.badges.add(badgeType);
+            const badgeSlot = document.querySelector(`[data-badge="${badgeType}"]`);
+            
+            if (badgeSlot) {
+                badgeSlot.classList.remove('bg-gray-100');
+                badgeSlot.classList.add('bg-gradient-to-br', 'from-yellow-400', 'to-orange-500');
+                badgeSlot.querySelector('i').classList.remove('text-gray-400');
+                badgeSlot.querySelector('i').classList.add('text-white');
+                badgeSlot.querySelector('div').classList.remove('text-gray-500');
+                badgeSlot.querySelector('div').classList.add('text-white', 'font-semibold');
+                
+                // Animation
+                badgeSlot.classList.add('success-animation');
+                setTimeout(() => badgeSlot.classList.remove('success-animation'), 600);
+            }
+        }
+
+        function showHint() {
+            const exercise = exerciseData[gameState.currentLevel].exercises[gameState.currentExercise];
+            let hint = '';
+
+            switch (exercise.type) {
+                case 'association':
+                    hint = "Regardez qui raconte l'histoire et à qui cela arrive. Utilisez 'm'' devant une voyelle.";
+                    break;
+                case 'completion':
+                    hint = "Pensez à qui s'adresse la personne qui parle : une personne (lui) ou plusieurs (vous/nous).";
+                    break;
+                case 'construction':
+                    hint = "Commencez par le sujet, puis placez le pronom avant le verbe auxiliaire.";
+                    break;
+                case 'narrative':
+                    hint = "Identifiez qui fait l'action et qui la reçoit dans cette partie de l'histoire.";
+                    break;
+            }
+
+            showFeedback(false, hint);
+        }
+
+        function backToMenu() {
+            document.getElementById('game-area').style.display = 'none';
+            document.getElementById('levels-menu').style.display = 'grid';
+            updateDisplay();
+        }
+    </script>
+</body>
+</html>
